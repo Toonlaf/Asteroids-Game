@@ -57,8 +57,6 @@ Welcome to our awesome remake of the classic Asteroids arcade game! Strap in, sp
 ## 🤝 Join Our Space Force!
 This game is evolving faster than alien technology! Got ideas? Bugs to report? Want to add a dancing alien? We're all ears (even if some of us have antenna)! 👽
 
-## 📜 Space Law
-[Insert your chosen license here. May we suggest the "Don't be a Black Hole" License?]
 
 ## 🙏 Tips of the Space Helmet to:
 - The OG Asteroids by Atari (You walked so we could fly... in space!)
