@@ -1,5 +1,6 @@
 import pygame
 import random
+import os
 from constants import *
 from shot import Shot
 
@@ -57,6 +58,11 @@ class Player(pygame.sprite.Sprite):
         self.smoke_timer = 0
         self.smoke_interval = 0.02  # Emit smoke more frequently
 
+        # Load and set up the sound effects
+        self.shoot_sound = pygame.mixer.Sound(os.path.join("sound", "fart.mp3"))
+        self.shoot_sound.set_volume(0.5)  # Adjust volume as needed (0.0 to 1.0)
+
+
     def update(self, dt):
         keys = pygame.key.get_pressed()
         if keys[pygame.K_a]:  # Rotate left
@@ -86,9 +92,16 @@ class Player(pygame.sprite.Sprite):
         self.smoke_particles.update(dt)
 
     def shoot(self):
+        # Play the shooting sound
+        self.shoot_sound.play()
+
         front_offset = pygame.Vector2(0, -self.rect.height / 2).rotate(-self.rotation)
         shot_pos = self.position + front_offset
         return Shot(shot_pos.x, shot_pos.y, self.rotation)
+
+    def die(self):
+        self.death_sound.play()
+        # Add any other death-related logic here, e.g., stopping the player, showing death animation, etc.
 
     def collides_with(self, other):
         return self.rect.colliderect(other.rect)

@@ -1,4 +1,5 @@
 import pygame
+import os
 import sys
 import random
 import math
@@ -8,6 +9,7 @@ from asteroid import Asteroid
 from shot import Shot
 
 pygame.init()
+pygame.mixer.init()  # Initialize the mixer
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 clock = pygame.time.Clock()
@@ -103,11 +105,19 @@ def spawn_asteroid(speed):
     asteroids.add(asteroid)
     return asteroid
 
+# Load sounds
+game_over_sound = pygame.mixer.Sound(os.path.join("sound", "english or spanish.mp3"))
+game_over_sound.set_volume(0.5)  # Adjust volume as needed
+
 def game_over_screen():
     screen.fill((0, 0, 0))
     draw_text("GAME OVER", title_font, (255, 0, 0), SCREEN_WIDTH // 2, SCREEN_HEIGHT // 3)
     draw_text(f"Final Score: {score}", font, (255, 255, 255), SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
     draw_text("Press SPACE to play again", font, (255, 255, 255), SCREEN_WIDTH // 2, SCREEN_HEIGHT * 2 // 3)
+    
+    # Play the game over sound
+    game_over_sound.play()
+    
     pygame.display.flip()
 
     waiting = True
@@ -118,6 +128,7 @@ def game_over_screen():
                 sys.exit()
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_SPACE:
+                    game_over_sound.stop()
                     waiting = False
 
 
