@@ -33,14 +33,14 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=self.position)
 
     def shoot(self):
-        forward = pygame.Vector2(0, -1).rotate(-self.rotation)
-        shot_pos = self.position + forward * 20
-        shot_velocity = forward * PLAYER_SHOOT_SPEED + self.velocity
-        return Shot(shot_pos.x, shot_pos.y, shot_velocity)
+        front_offset = pygame.Vector2(0, -self.rect.height / 2).rotate(-self.rotation)
+        shot_pos = self.position + front_offset
+        print(f"Player rotation when shooting: {self.rotation}")
+        return Shot(shot_pos.x, shot_pos.y, self.rotation)
 
     def collides_with(self, other):
         return self.rect.colliderect(other.rect)
-    
+
     def reset(self):
         self.position = pygame.Vector2(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
         self.velocity = pygame.Vector2(0, 0)

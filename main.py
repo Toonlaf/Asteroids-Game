@@ -204,6 +204,9 @@ def game_loop():
     settings = DIFFICULTY_SETTINGS[current_difficulty]
     asteroid_timer = 0
 
+    # Create a sprite group for shot particles
+    shot_particles = pygame.sprite.Group()
+
     # Spawn initial asteroids
     for _ in range(settings["max_asteroids"] // 2):
         spawn_asteroid(settings["asteroid_speed"])
@@ -220,8 +223,11 @@ def game_loop():
                     shot = player.shoot()
                     all_sprites.add(shot)
                     shots.add(shot)
+                    # Add particle effects for the shot
+                    shot_particles.add(shot.create_particles())
 
         all_sprites.update(dt)
+        shot_particles.update(dt)
 
         # Spawn new asteroids
         asteroid_timer += dt
@@ -244,6 +250,7 @@ def game_loop():
         # Draw everything
         screen.fill((0, 0, 0))
         all_sprites.draw(screen)
+        shot_particles.draw(screen)
 
         # Draw score and difficulty
         draw_text(f"Score: {score}", font, (255, 255, 255), 70, 20)
