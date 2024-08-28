@@ -154,15 +154,21 @@ def start_screen():
         title_color[1] = (title_color[1] + color_change_speed * dt * 0.5) % 256
         title_color[2] = (title_color[2] + color_change_speed * dt * 0.25) % 256
 
-        # Draw title with glow effect
-        for offset in range(5, 0, -1):
-            alpha = 50 + (5 - offset) * 40
-            glow_font = pygame.font.Font(None, 84 + offset * 2)
-            glow_surface = glow_font.render("ASTEROIDS", True, (*title_color[:3], alpha))
-            glow_rect = glow_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 4))
-            screen.blit(glow_surface, glow_rect)
-        
-        draw_text("ASTEROIDS", title_font, title_color, SCREEN_WIDTH // 2, SCREEN_HEIGHT // 4)
+        # Draw title with shadow effect
+        shadow_color = (20, 20, 20)  # Dark gray for shadow
+        shadow_offset = 4  # Pixels to offset the shadow
+
+        for i in range(3):  # Create multiple layers for a softer shadow
+            alpha = 100 - i * 30  # Fade out for each layer
+            shadow_font = pygame.font.Font(None, 84 + i * 2)
+            shadow_surface = shadow_font.render("ASTEROIDS", True, (*shadow_color, alpha))
+            shadow_rect = shadow_surface.get_rect(center=(SCREEN_WIDTH // 2 + shadow_offset, SCREEN_HEIGHT // 4 + shadow_offset))
+            screen.blit(shadow_surface, shadow_rect)
+
+        # Draw main title text
+        main_surface = title_font.render("ASTEROIDS", True, title_color)
+        main_rect = main_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 4))
+        screen.blit(main_surface, main_rect)
 
         draw_text("Select Difficulty:", font, (200, 200, 200), SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 20)
 
@@ -198,18 +204,20 @@ def game_loop():
     all_sprites.empty()
     asteroids.empty()
     shots.empty()
-    player.reset()
+    player = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
     all_sprites.add(player)
 
     settings = DIFFICULTY_SETTINGS[current_difficulty]
     asteroid_timer = 0
 
-    # Create a sprite group for shot particles
     shot_particles = pygame.sprite.Group()
 
     # Spawn initial asteroids
     for _ in range(settings["max_asteroids"] // 2):
-        spawn_asteroid(settings["asteroid_speed"])
+        new_asteroid = Asteroid.spawn_asteroid(settings["asteroid_speed"], asteroids)
+        if new_asteroid:
+            all_sprites.add(new_asteroid)
+            asteroids.add(new_asteroid)
 
     running = True
     while running:
@@ -223,32 +231,62 @@ def game_loop():
                     shot = player.shoot()
                     all_sprites.add(shot)
                     shots.add(shot)
-                    # Add particle effects for the shot
                     shot_particles.add(shot.create_particles())
 
+        # Update
         all_sprites.update(dt)
+        player.update(dt)
         shot_particles.update(dt)
+
+        # Remove asteroids that are far off-screen
+        for asteroid in list(asteroids):
+            if asteroid.is_off_screen():
+                asteroid.kill()
 
         # Spawn new asteroids
         asteroid_timer += dt
         if asteroid_timer >= settings["spawn_rate"] and len(asteroids) < settings["max_asteroids"]:
-            spawn_asteroid(settings["asteroid_speed"])
-            asteroid_timer = 0
+            new_asteroid = Asteroid.spawn_asteroid(settings["asteroid_speed"], asteroids)
+            if new_asteroid:
+                all_sprites.add(new_asteroid)
+                asteroids.add(new_asteroid)
+                asteroid_timer = 0
 
         # Check for collisions
         for asteroid in asteroids:
-            if player.collides_with(asteroid):
-                return True
+            if pygame.sprite.collide_mask(player, asteroid):
+                return True  # Game over
 
         for shot in shots:
-            hit_asteroids = pygame.sprite.spritecollide(shot, asteroids, True)
-            if hit_asteroids:
+            hit_asteroids = pygame.sprite.spritecollide(shot, asteroids, False, pygame.sprite.collide_mask)
+            for asteroid in hit_asteroids:
+                asteroid.kill()
                 shot.kill()
-                score += len(hit_asteroids) * 10
-                spawn_asteroid(settings["asteroid_speed"])
+                score += 10
+                # Spawn a new asteroid to replace the destroyed one
+                new_asteroid = Asteroid.spawn_asteroid(settings["asteroid_speed"], asteroids)
+                if new_asteroid:
+                    all_sprites.add(new_asteroid)
+                    asteroids.add(new_asteroid)
+
+        # Check for asteroid-asteroid collisions
+        for i, asteroid1 in enumerate(asteroids):
+            for asteroid2 in list(asteroids)[i+1:]:
+                if pygame.sprite.collide_mask(asteroid1, asteroid2):
+                    asteroid1.collide_with_asteroid(asteroid2)
+
+        # Ensure minimum number of asteroids
+        while len(asteroids) < settings["max_asteroids"]:
+            new_asteroid = Asteroid.spawn_asteroid(settings["asteroid_speed"], asteroids)
+            if new_asteroid:
+                all_sprites.add(new_asteroid)
+                asteroids.add(new_asteroid)
+            else:
+                break  # Stop trying to spawn if we can't find a valid position
 
         # Draw everything
         screen.fill((0, 0, 0))
+        player.draw(screen)  # This will draw both smoke and the player
         all_sprites.draw(screen)
         shot_particles.draw(screen)
 
@@ -259,7 +297,6 @@ def game_loop():
         pygame.display.flip()
 
     return False
-
 def main():
     while True:
         start_screen()

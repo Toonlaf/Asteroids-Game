@@ -16,8 +16,8 @@ class Shot(pygame.sprite.Sprite):
         self.velocity = pygame.math.Vector2(0, -self.speed).rotate(-angle)
         self.position = pygame.math.Vector2(x, y)
         self.lifetime = 1.5  # Shot disappears after 1.5 seconds
-        print(f"Shot created with angle: {angle}")
-        print(f"Shot velocity: {self.velocity}")
+        self.smoke_timer = 0
+        self.smoke_interval = 0.05  # Create smoke every 0.05 seconds
 
     def update(self, dt):
         self.position += self.velocity * dt
@@ -30,6 +30,13 @@ class Shot(pygame.sprite.Sprite):
         if self.rect.right < 0 or self.rect.left > SCREEN_WIDTH or \
            self.rect.bottom < 0 or self.rect.top > SCREEN_HEIGHT:
             self.kill()
+
+        # Create smoke
+        self.smoke_timer += dt
+        if self.smoke_timer >= self.smoke_interval:
+            self.smoke_timer = 0
+            return [SmokeParticle(self.rect.center)]
+        return []
 
     def create_particles(self):
         particles = []
@@ -55,5 +62,27 @@ class ShotParticle(pygame.sprite.Sprite):
         self.position += self.velocity * dt
         self.rect.center = self.position
         self.lifetime -= dt
+        if self.lifetime <= 0:
+            self.kill()
+
+class SmokeParticle(pygame.sprite.Sprite):
+    def __init__(self, pos):
+        super().__init__()
+        size = random.randint(2, 5)
+        self.image = pygame.Surface((size, size))
+        self.image.fill((200, 200, 200))  # Gray color for smoke
+        self.rect = self.image.get_rect()
+        self.rect.center = pos
+        self.velocity = pygame.math.Vector2(random.uniform(-20, 20), random.uniform(50, 100))
+        self.position = pygame.math.Vector2(pos)
+        self.lifetime = random.uniform(0.5, 1.5)
+        self.alpha = 255
+
+    def update(self, dt):
+        self.position += self.velocity * dt
+        self.rect.center = self.position
+        self.lifetime -= dt
+        self.alpha = max(0, int(255 * (self.lifetime / 1.5)))
+        self.image.set_alpha(self.alpha)
         if self.lifetime <= 0:
             self.kill()
